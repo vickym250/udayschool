@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "74451396810",
+    "project_id": "jnschool-6e62e",
+    "storage_bucket": "jnschool-6e62e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:74451396810:android:e352a2b5c1f8784ddd6c33",
+        "android_client_info": {
+          "package_name": "com.vtech250.jnteacher"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD_CzO9vhAMJjRfvNrGd23OEZl7sQijds8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,57 @@
+@import "tailwindcss";
+/* 🌟 FINAL RECEIPT PRINT FIX – 100% ONE PAGE 🌟 */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  #print-area, #print-area * {
+    visibility: visible !important;
+    /* Force colors to show (Lunch/Off colors) */
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  #print-area {
+    position: fixed !important;
+    top: 20px !important;
+    left: 50% !important;
+    transform: translateX(-50%);
+    box-shadow: none !important;
+    /* Timetable wide hota hai, isliye width ensure karein */
+    width: 95% !important; 
+  }
+
+  /* Buttons aur extra elements ko hide karne ke liye */
+  .no-print {
+    display: none !important;
+  }
+
+  @page {
+    size: A4 landscape; /* Landscape zaroori hai table ke liye */
+    margin: 10mm;
+  }
+}
+
+/* Chrome, Safari, Edge, aur Opera ke liye spinners hatane ke liye */
+/* 1. Chrome, Safari, Edge aur Opera se arrows hatane ke liye */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* 2. Firefox se arrows hatane ke liye */
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* 3. Global fix: Mouse scroll se value change hona rokne ke liye */
+input[type=number]:focus {
+  pointer-events: auto;
+}
+
+/* Pointer events hack jo scroll ko block karta hai jab tak focus na ho */
+input[type=number] {
+  pointer-events: auto;
+}

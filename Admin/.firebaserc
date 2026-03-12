@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "schooltest-b8ce2",
+    "prod": "udayschool-ef396"
+  },
+  "targets": {},
+  "etags": {}
+}
