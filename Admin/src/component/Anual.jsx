@@ -15,7 +15,7 @@ export default function MarksSheet() {
   const [loading, setLoading] = useState(true);
   const [classResults, setClassResults] = useState([]);
   const [subjects, setSubjects] = useState([]);
-  
+
   const [schoolInfo, setSchoolInfo] = useState({
     name: "Dr. A. P. J. Abdul Kalam Memorial Kid's Academy",
     address: "Barhni (opp. Cold Storage), Post- Kathawtiya Alam, Dumariyaganj, Siddharth Nagar - 272189",
@@ -25,7 +25,7 @@ export default function MarksSheet() {
     signatureUrl: "" // Naya field for Signature
   });
 
-  const TABLE_ROWS_COUNT = 8; 
+  const TABLE_ROWS_COUNT = 8;
   const normalize = (str = "") => str.toLowerCase().replace(/[^a-z]/g, "");
 
   const calculateGrade = (per) => {
@@ -60,7 +60,7 @@ export default function MarksSheet() {
       });
     } catch (e) {
       console.error("Asset fetch error:", e);
-      return url; 
+      return url;
     }
   };
 
@@ -169,7 +169,7 @@ export default function MarksSheet() {
         const mSnap = await getDoc(doc(db, "school_config", "master_data"));
         if (mSnap.exists()) {
           const mapping = mSnap.data().mapping || {};
-          setSubjects(mapping[sName] || mapping["Class "+sName] || []);
+          setSubjects(mapping[sName] || mapping["Class " + sName] || []);
         }
         const stuSnap = await getDocs(query(collection(db, "students"), where("className", "==", sName)));
         const students = stuSnap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -193,16 +193,43 @@ export default function MarksSheet() {
           if (mSnap.exists()) setSubjects(mSnap.data().mapping[stu.className] || []);
           const rSnap = await getDocs(query(collection(db, "examResults"), where("studentId", "==", studentId), where("session", "==", session)));
           const resDocs = rSnap.docs.map(d => d.data());
-          setClassResults([{ 
-            student: { id: studentId, ...stu }, 
-            half: resDocs.find(r => r.exam === "Half-Yearly"), 
-            annual: resDocs.find(r => r.exam === "Annual"), 
-            srNo: resDocs[0]?.srNo || "---" 
+          setClassResults([{
+            student: { id: studentId, ...stu },
+            half: resDocs.find(r => r.exam === "Half-Yearly"),
+            annual: resDocs.find(r => r.exam === "Annual"),
+            srNo: resDocs[0]?.srNo || "---"
           }]);
         }
       }
     } catch (e) { console.error(e); }
     setLoading(false);
+  };
+
+  const formatClassName = (name = "") => {
+    const lowerName = name.toLowerCase();
+
+    // Nursery, LKG, UKG ko touch nahi karenge, bas uppercase kar denge
+    if (["nursery", "lkg", "ukg"].some(c => lowerName.includes(c))) {
+      return name.toUpperCase();
+    }
+
+    // String se number nikalne ke liye (e.g., "Class 10" -> 10)
+    const match = name.match(/\d+/);
+    if (!match) return name;
+
+    const num = parseInt(match[0]);
+
+    // Suffix logic (st, nd, rd, th)
+    let suffix = "th";
+
+    // 11, 12, 13 hamesha "th" hote hain, baaki 1, 2, 3 check karenge
+    if (num % 100 < 11 || num % 100 > 13) {
+      if (num % 10 === 1) suffix = "st";
+      else if (num % 10 === 2) suffix = "nd";
+      else if (num % 10 === 3) suffix = "rd";
+    }
+
+    return `${num}${suffix}`;
   };
 
   useEffect(() => { loadData(); }, [studentId, session]);
@@ -239,22 +266,22 @@ export default function MarksSheet() {
               <div className="main-border">
                 {/* Header Section */}
                 <div className="flex items-center w-full gap-2">
-                   {schoolInfo.logoUrl && <img src={schoolInfo.logoUrl} className="school-logo-img w-16 h-16 object-contain" alt="logo" />}
-                   <div className="flex-1 text-center">
-                      <h1 className="header-school-name text-2xl">{schoolInfo.name}</h1>
-                      <p className="header-subtext uppercase text-[13px]">{schoolInfo.address}</p>
-                      <p className="header-subtext uppercase text-[11px] ">Mob: {schoolInfo.contact}</p>
-                      <p className="header-subtext uppercase text-[11px] ">Website: {schoolInfo.website}</p>
-                   </div>
+                  {schoolInfo.logoUrl && <img src={schoolInfo.logoUrl} className="school-logo-img w-16 h-16 object-contain" alt="logo" />}
+                  <div className="flex-1 text-center">
+                    <h1 className="header-school-name text-2xl">{schoolInfo.name}</h1>
+                    <p className="header-subtext uppercase text-[13px]">{schoolInfo.address}</p>
+                    <p className="header-subtext uppercase text-[11px] ">Mob: {schoolInfo.contact}</p>
+                    <p className="header-subtext uppercase text-[11px] ">Website: {schoolInfo.website}</p>
+                  </div>
                 </div>
 
                 <div className="banner-strip">
-                   Annual Report Card - Session : {session}
+                  Annual Report Card - Session : {session}
                 </div>
 
                 <div className="flex justify-between items-center mb-2 px-1">
-                   <div className="text-[20px] font-black text-blue-900">SR. NO.: {srNo}</div>
-                   <div className="text-[20px] font-black text-blue-900 px-3 py-0.5 bg-amber-300 border border-blue-900">ROLL NO.: {roll}</div>
+                  <div className="text-[20px] font-black text-blue-900">SR. NO.: {srNo}</div>
+                  <div className="text-[20px] font-black text-blue-900 px-3 py-0.5 bg-amber-300 border border-blue-900">ROLL NO.: {roll}</div>
                 </div>
 
                 {/* Personal Info */}
@@ -264,8 +291,13 @@ export default function MarksSheet() {
                     <div className="info-line"><span className="info-label">Father's Name:</span><span className="info-value">{student.fatherName}</span></div>
                     <div className="info-line"><span className="info-label">Mother's Name:</span><span className="info-value">{student.motherName || "---"}</span></div>
                     <div className="flex gap-2">
-                      <div className="info-line flex-1"><span className="info-label" style={{width:'60px'}}>Class:</span><span className="info-value">{student.className}</span></div>
-                      <div className="info-line flex-1"><span className="info-label" style={{width:'60px'}}>D.O.B:</span><span className="info-value">{dob}</span></div>
+                      <div className="info-line flex-1">
+                        <span className="info-label" style={{ width: '60px' }}>Class:</span>
+                        <span className="info-value">
+                          {formatClassName(student.className)} {/* 👈 Ye line change karein */}
+                        </span>
+                      </div>
+                      <div className="info-line flex-1"><span className="info-label" style={{ width: '60px' }}>D.O.B:</span><span className="info-value">{dob}</span></div>
                     </div>
                     <div className="info-line"><span className="info-label">Address:</span><span className="info-value">{student.address || "---"}</span></div>
                   </div>
@@ -295,7 +327,7 @@ export default function MarksSheet() {
                         const m = getMarks(sub);
                         return (
                           <tr key={i} className="h-7">
-                            <td className="bg-slate-50">{i+1}</td>
+                            <td className="bg-slate-50">{i + 1}</td>
                             <td className="text-left px-2 text-[10px]">{sub}</td>
                             <td className="text-gray-400">{m.hMax}</td><td className="text-black">{m.hObt}</td>
                             <td className="text-gray-400">{m.aMax}</td><td className="text-black">{m.aObt}</td>
@@ -366,7 +398,7 @@ export default function MarksSheet() {
                   <div className="w-16 h-16 border border-dashed border-blue-900 rounded-full flex items-center justify-center opacity-20">
                     <span className="text-[8px] font-bold text-blue-900">SEAL</span>
                   </div>
-                  
+
                   {/* Principal Signature Area */}
                   <div className="sig-container">
                     {schoolInfo.signatureUrl && (

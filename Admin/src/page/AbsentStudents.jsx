@@ -20,11 +20,26 @@ export default function AbsentStudents() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // --- DYNAMIC SESSION LOGIC ---
+  const getCurrentSession = () => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0-indexed (April is 3)
+    if (currentMonth >= 3) {
+      return `${currentYear}-${(currentYear + 1).toString().slice(-2)}`;
+    } else {
+      return `${currentYear - 1}-${currentYear.toString().slice(-2)}`;
+    }
+  };
+
+  const CURRENT_ACTIVE_SESSION = getCurrentSession();
+  const sessionOptions = ["2024-25", "2025-26", "2026-27", "2027-28"];
+
   const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   const today = new Date();
   const [selectedDate, setSelectedDate] = useState(today.getDate());
   const [selectedMonth, setSelectedMonth] = useState(months[today.getMonth()]);
-  const [session, setSession] = useState("2025-26");
+  const [session, setSession] = useState(CURRENT_ACTIVE_SESSION); // Default set to dynamic session
   const [className, setClassName] = useState("All");
 
   useEffect(() => {
@@ -64,8 +79,9 @@ export default function AbsentStudents() {
           {/* FILTERS */}
           <div className="flex flex-wrap justify-center gap-2 bg-slate-50 p-2 rounded-3xl border border-slate-100">
             <select value={session} onChange={(e) => setSession(e.target.value)} className="bg-white px-3 py-2 rounded-2xl font-black text-[10px] text-slate-700 outline-none border border-slate-100 cursor-pointer">
-                <option value="2024-25">2024-25</option>
-                <option value="2025-26">2025-26</option>
+                {sessionOptions.map(opt => (
+                  <option key={opt} value={opt}>{opt} {opt === CURRENT_ACTIVE_SESSION ? "(Current)" : ""}</option>
+                ))}
             </select>
 
             <div className="flex bg-white rounded-2xl border border-slate-100 overflow-hidden">
@@ -116,7 +132,6 @@ export default function AbsentStudents() {
                         {student.fatherName}
                       </td>
                       <td className="px-8 py-5 text-right">
-                        {/* Call Button Logic */}
                         <a 
                           href={`tel:${student.phone}`} 
                           className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 px-5 py-2.5 rounded-2xl border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all active:scale-90 shadow-sm group/btn"

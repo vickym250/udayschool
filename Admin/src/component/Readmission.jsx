@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { db } from "../firebase";
+import { db, storage } from "../firebase";
 import {
   addDoc,
   collection,
@@ -12,6 +12,7 @@ import {
   arrayUnion,
   serverTimestamp,
 } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { updateTotalStudents } from "./updateTotalStudents";
 import AdmissionDetails from "./AdmisionForm";
 import toast from "react-hot-toast";
@@ -37,9 +38,7 @@ export default function Readmission({ close, studentData }) {
 
   const [form, setForm] = useState({
     name: "", className: "", rollNumber: "...", regNo: "", phone: "", address: "",
-    fatherName: "", motherName: "", aadhaar: "", 
-    fatherAadhaar: "", motherAadhaar: "", // Added Aadhaar fields
-    gender: "", category: "", dob: "", session: "", photoURL: "",
+    fatherName: "", motherName: "", aadhaar: "", gender: "", category: "", dob: "", session: "", photoURL: "",
     parentId: "", admissionDate: new Date().toISOString().split("T")[0],
   });
 
@@ -56,6 +55,7 @@ export default function Readmission({ close, studentData }) {
 
         if (studentData) {
           const now = new Date();
+          // April loop for session change
           const session = now.getMonth() + 1 >= 4 
             ? `${now.getFullYear()}-${(now.getFullYear() + 1).toString().slice(-2)}` 
             : `${now.getFullYear() - 1}-${now.getFullYear().toString().slice(-2)}`;
@@ -66,14 +66,14 @@ export default function Readmission({ close, studentData }) {
             rollNumber: "...",
             admissionDate: new Date().toISOString().split("T")[0],
           });
-          // Note: Initial subjects will be set when className is confirmed/changed
+          setSubjects(studentData.subjects || []);
         }
       } catch (err) { console.error("Error:", err); }
     };
     fetchMasterAndStudent();
   }, [studentData]);
 
-  // Auto Roll Logic for Next Session
+  // Auto Roll Logic
   useEffect(() => {
     if (!form.className || !form.session) return;
     const fetchRoll = async () => {
@@ -101,11 +101,11 @@ export default function Readmission({ close, studentData }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (form.rollNumber === "Wait..." || form.rollNumber === "...") return toast.error("Please wait for Roll Number");
+    if (form.rollNumber === "Wait...") return toast.error("Please wait for Roll Number");
     
     setLoading(true);
     try {
-      const { id, createdAt, ...cleanForm } = form;
+      const { id, createdAt, photo, ...cleanForm } = form;
 
       // 1. Create New Student Doc for New Session
       const sDoc = await addDoc(collection(db, "students"), {
@@ -127,13 +127,9 @@ export default function Readmission({ close, studentData }) {
         });
       }
 
-      // 3. Update Parent Link & Data (Ensure Aadhaar updates in Parent collection too)
+      // Update Parent collection to include new student ID
       if (form.parentId) {
-        await updateDoc(doc(db, "parents", form.parentId), { 
-          students: arrayUnion(sDoc.id),
-          fatherAadhaar: form.fatherAadhaar || "",
-          motherAadhaar: form.motherAadhaar || ""
-        });
+        await updateDoc(doc(db, "parents", form.parentId), { students: arrayUnion(sDoc.id) });
       }
       
       await updateTotalStudents();
@@ -154,7 +150,7 @@ export default function Readmission({ close, studentData }) {
           <div className="p-6 border-b flex justify-between items-center bg-emerald-700 text-white">
             <div>
                <h2 className="text-xl font-black uppercase tracking-tight">{t.title}</h2>
-               <p className="text-[10px] opacity-80 font-bold uppercase tracking-widest">Promotion to Session {form.session}</p>
+               <p className="text-[10px] opacity-80 font-bold uppercase tracking-widest">Promotion to {form.session}</p>
             </div>
             <button type="button" onClick={close} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors text-2xl font-light">&times;</button>
           </div>
@@ -164,7 +160,7 @@ export default function Readmission({ close, studentData }) {
             {/* ID Bar */}
             <div className="flex gap-4">
               <div className="flex-1 bg-emerald-50 p-4 rounded-3xl border-2 border-emerald-100 text-center">
-                <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Reg No (Permanent)</p>
+                <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Registration No</p>
                 <p className="text-xl font-black text-emerald-800">{form.regNo}</p>
               </div>
               <div className="flex-1 bg-blue-50 p-4 rounded-3xl border-2 border-blue-100 text-center">
@@ -173,18 +169,25 @@ export default function Readmission({ close, studentData }) {
               </div>
             </div>
 
+            {/* Language Toggle */}
+            <div className="flex justify-end">
+                <button type="button" onClick={() => setLang(lang === 'en' ? 'hi' : 'en')} className="text-[10px] font-black bg-slate-100 px-3 py-1 rounded-full uppercase tracking-wider text-slate-500">
+                    {lang === 'en' ? 'हिन्दी में बदलें' : 'Switch to English'}
+                </button>
+            </div>
+
             <section className="space-y-5">
               <div className="font-black text-emerald-700 border-l-4 border-emerald-700 pl-3 uppercase text-[11px] tracking-widest">{t.studentInfo}</div>
               
               <div className="grid md:grid-cols-2 gap-5">
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] font-black text-gray-400 uppercase ml-1">{t.admDate}</label>
-                  <input type="date" name="admissionDate" value={form.admissionDate} onChange={handleChange} className="border-2 p-3.5 rounded-2xl outline-none font-bold bg-white" required />
+                  <input type="date" name="admissionDate" value={form.admissionDate} onChange={handleChange} className="border-2 p-3.5 rounded-2xl focus:border-emerald-500 focus:ring-4 ring-emerald-50 outline-none transition-all font-bold" required />
                 </div>
 
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Promote to Class</label>
-                  <select name="className" value={form.className} onChange={handleChange} className="border-2 p-3.5 rounded-2xl outline-none font-black text-emerald-800 appearance-none bg-white" required>
+                  <select name="className" value={form.className} onChange={handleChange} className="border-2 p-3.5 rounded-2xl focus:border-emerald-500 outline-none font-black text-emerald-800 appearance-none bg-white" required>
                     <option value="">-- Choose Class --</option>
                     {availableClasses.map(cls => <option key={cls} value={cls}>{cls}</option>)}
                   </select>
@@ -197,12 +200,12 @@ export default function Readmission({ close, studentData }) {
               </div>
             </section>
 
-            {/* Subjects Logic */}
+            {/* Subjects */}
             <div className="bg-slate-50 p-6 rounded-[2rem] border-2 border-dashed border-slate-200">
                 <p className="text-[10px] font-black text-slate-500 uppercase mb-4 text-center tracking-widest italic">New Subjects for {form.className || '...'}</p>
                 <div className="flex flex-wrap gap-2 mb-5 justify-center">
                   {subjects.map((sub, i) => (
-                    <span key={i} className="bg-white border shadow-sm text-slate-700 px-4 py-2 rounded-2xl text-[10px] font-black uppercase flex items-center gap-2">
+                    <span key={i} className="bg-white border shadow-sm text-slate-700 px-4 py-2 rounded-2xl text-[10px] font-black uppercase flex items-center gap-2 animate-in fade-in slide-in-from-bottom-1">
                       {sub} 
                       <button type="button" onClick={() => setSubjects(s => s.filter((_, idx) => idx !== i))} className="w-4 h-4 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-colors">&times;</button>
                     </span>
@@ -218,30 +221,15 @@ export default function Readmission({ close, studentData }) {
                 </select>
             </div>
 
-            {/* Parent Aadhaar Updates */}
-            <section className="space-y-4">
+            <section className="space-y-4 pb-4">
               <div className="font-black text-blue-700 border-l-4 border-blue-700 pl-3 uppercase text-[11px] tracking-widest">{t.parentInfo}</div>
               <div className="grid md:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Father's Name</label>
-                  <input value={form.fatherName} readOnly className="border-2 p-3.5 rounded-2xl bg-slate-50 font-bold text-slate-400 text-sm" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Father Aadhaar (Optional)</label>
-                  <input name="fatherAadhaar" value={form.fatherAadhaar} onChange={handleChange} maxLength="12" placeholder="12 Digit Aadhaar" className="border-2 p-3.5 rounded-2xl font-bold text-sm outline-none focus:border-blue-500" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Mother's Name</label>
-                  <input value={form.motherName} readOnly className="border-2 p-3.5 rounded-2xl bg-slate-50 font-bold text-slate-400 text-sm" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Mother Aadhaar (Optional)</label>
-                  <input name="motherAadhaar" value={form.motherAadhaar} onChange={handleChange} maxLength="12" placeholder="12 Digit Aadhaar" className="border-2 p-3.5 rounded-2xl font-bold text-sm outline-none focus:border-blue-500" />
-                </div>
+                <input value={form.fatherName} readOnly placeholder="Father's Name" className="border-2 p-3.5 rounded-2xl bg-slate-50 font-bold text-slate-400 text-sm" />
+                <input value={form.phone} readOnly placeholder="Mobile No" className="border-2 p-3.5 rounded-2xl bg-slate-50 font-bold text-slate-400 text-sm" />
               </div>
             </section>
 
-            <button type="submit" disabled={loading} className="w-full py-5 bg-emerald-700 text-white rounded-[2rem] font-black shadow-xl shadow-emerald-200 uppercase tracking-widest hover:bg-emerald-800 transition-all active:scale-[0.98] disabled:bg-slate-300">
+            <button type="submit" disabled={loading} className="w-full py-5 bg-emerald-700 text-white rounded-[2rem] font-black shadow-xl shadow-emerald-200 uppercase tracking-widest hover:bg-emerald-800 transition-all active:scale-[0.98] disabled:bg-slate-300 disabled:shadow-none">
               {loading ? "SAVING PROMOTION..." : t.saveBtn}
             </button>
           </form>

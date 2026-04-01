@@ -20,9 +20,29 @@ import AdmissionDetails from "../component/AdmisionForm";
 export default function StudentList() {
   let navigator = useNavigate();
 
-  const CURRENT_ACTIVE_SESSION = "2025-26";
-  const sessions = ["2024-25", "2025-26", "2026-27"];
-  const [session, setSession] = useState("2025-26");
+  // --- 1. DYNAMIC SESSION LOGIC ---
+  // Ye function check karega ki aaj ki date 1 April se pehle hai ya baad mein
+  const getCurrentSession = () => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const month = now.getMonth(); // Jan is 0, April is 3
+
+    if (month >= 3) {
+      // April (3) ya usse bada month hai toh: 2025-26
+      return `${currentYear}-${(currentYear + 1).toString().slice(-2)}`;
+    } else {
+      // Jan, Feb, March hai toh pichla saal hi session mana jayega: 2024-25
+      return `${currentYear - 1}-${currentYear.toString().slice(-2)}`;
+    }
+  };
+
+  const CURRENT_ACTIVE_SESSION = getCurrentSession();
+  
+  // Dropdown options (Aap isme aur years bhi add kar sakte hain)
+  const sessions = ["2024-25", "2025-26", "2026-27", "2027-28"];
+  
+  // Default session wahi aayega jo current date ke hisaab se hai
+  const [session, setSession] = useState(CURRENT_ACTIVE_SESSION);
   
   // Dynamic Classes State
   const [schoolClasses, setSchoolClasses] = useState([]);
@@ -39,12 +59,11 @@ export default function StudentList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [rowsToShow, setRowsToShow] = useState(10);
 
-  // 1. Fetch Classes from Database (As per your screenshot field: 'name')
+  // 1. Fetch Classes from Database
   useEffect(() => {
     const q = query(collection(db, "classes")); 
     const unsubClasses = onSnapshot(q, (snap) => {
       const classList = snap.docs.map(doc => doc.data().name).filter(Boolean);
-      // Alphabetical sort (Class 1, Class 10, Class 2 logic handle karne ke liye)
       const sortedClasses = classList.sort((a, b) => 
         a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
       );
@@ -91,7 +110,7 @@ export default function StudentList() {
     .sort((a, b) => {
       const rollA = parseInt(a.rollNumber) || 0;
       const rollB = parseInt(b.rollNumber) || 0;
-      return rollA - rollB; // Chote se bada (1, 2, 3...)
+      return rollA - rollB;
     });
 
   const displayedStudents = searchTerm 
@@ -158,7 +177,7 @@ export default function StudentList() {
 
         <div className="flex flex-wrap items-center gap-2 mb-4">
           <select value={session} onChange={(e) => { setSession(e.target.value); setRowsToShow(10); }} className="border border-slate-300 rounded-md px-2 py-1.5 text-xs md:text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-indigo-500/20">
-            {sessions.map(s => <option key={s}>{s}</option>)}
+            {sessions.map(s => <option key={s} value={s}>{s} {s === CURRENT_ACTIVE_SESSION ? "(Current)" : ""}</option>)}
           </select>
           
           <select value={className} onChange={(e) => { setClassName(e.target.value); setRowsToShow(10); }} className="border border-slate-300 rounded-md px-2 py-1.5 text-xs md:text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-indigo-500/20">
@@ -199,9 +218,9 @@ export default function StudentList() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
-                <tr><td colSpan="9" className="text-center py-20 font-bold text-slate-400">Loading Data...</td></tr>
+                <tr><td colSpan="13" className="text-center py-20 font-bold text-slate-400">Loading Data...</td></tr>
               ) : displayedStudents.length === 0 ? (
-                <tr><td colSpan="9" className="text-center py-20 text-slate-400 italic">No students found in this class.</td></tr>
+                <tr><td colSpan="13" className="text-center py-20 text-slate-400 italic">No students found in this class.</td></tr>
               ) : (
                 displayedStudents.map((s) => (
                   <tr key={s.id} className="hover:bg-indigo-50/50 transition-colors group">
@@ -218,7 +237,6 @@ export default function StudentList() {
                     <td className="px-3 py-2 text-[11px] md:text-xs text-slate-600 font-medium">{s.fatherName}</td>
                     <td className="px-3 py-2 text-[11px] md:text-xs text-slate-600 font-medium">{s.motherName}</td>
                     <td className="px-3 py-2 text-[11px] md:text-xs text-slate-500 font-mono">{s.aadharNumber || "—"}</td>
-                    
                     <td className="px-3 py-2 text-[11px] md:text-xs text-slate-500 font-mono">{s.category || "—"}</td>
                     <td className="px-3 py-2 text-[11px] md:text-xs text-slate-500 font-mono">{s.gender || "—"}</td>
                     <td className="px-3 py-2 text-[11px] md:text-xs text-slate-500 font-mono">{s.dob || "—"}</td>
@@ -229,6 +247,7 @@ export default function StudentList() {
                         <button onClick={() => handleOpenDetails(s)} className="bg-slate-100 text-slate-700 px-2 py-1 rounded text-[9px] font-black hover:bg-slate-200 uppercase">Detail</button>
                         <button onClick={() => navigator(`/feesrec/${s.id}`)} className="bg-indigo-600 text-white px-2 py-1 rounded text-[9px] font-black hover:bg-indigo-700 uppercase">Fee</button>
                         
+                        {/* --- Logic: Current Session vs Student Session --- */}
                         {s.session === CURRENT_ACTIVE_SESSION ? (
                           <button onClick={() => { setEditStudent(s); setOpen(true); }} className="bg-amber-400 text-white px-2 py-1 rounded text-[9px] font-black hover:bg-amber-500 uppercase">Edit</button>
                         ) : (

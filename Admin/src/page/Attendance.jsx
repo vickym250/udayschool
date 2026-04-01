@@ -16,9 +16,24 @@ import {
 import toast from "react-hot-toast";
 
 export default function Attendance() {
+  /* ---------------- DYNAMIC SESSION LOGIC ---------------- */
+  // Ye function current date ke hisaab se session nikalega (1 April cutoff)
+  const getCurrentSession = () => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0 = Jan, 3 = April
+    if (currentMonth >= 3) {
+      return `${currentYear}-${(currentYear + 1).toString().slice(-2)}`;
+    } else {
+      return `${currentYear - 1}-${currentYear.toString().slice(-2)}`;
+    }
+  };
+
+  const CURRENT_ACTIVE_SESSION = getCurrentSession();
+  const sessions = ["2024-25", "2025-26", "2026-27", "2027-28"];
+  
   /* ---------------- STATES ---------------- */
-  const sessions = ["2024-25", "2025-26", "2026-27"];
-  const [session, setSession] = useState("2025-26");
+  const [session, setSession] = useState(CURRENT_ACTIVE_SESSION); // Default dynamic session set kiya
   const months = ["April", "May", "June", "July", "August", "September", "October", "November", "December", "January", "February", "March"];
   const today = new Date();
   const currentMonthName = today.toLocaleString("en-US", { month: "long" });
@@ -28,13 +43,13 @@ export default function Attendance() {
   const [classList, setClassList] = useState([]); 
   const [className, setClassName] = useState(""); 
   const [students, setStudents] = useState([]);
-  const [limitCount, setLimitCount] = useState(10); // Sync issues fix karne ke liye limit handle ki hai
+  const [limitCount, setLimitCount] = useState(10); 
   const [hasMore, setHasMore] = useState(true); 
   const [searchTerm, setSearchTerm] = useState("");
   const [holidays, setHolidays] = useState({});
   const [activeTooltip, setActiveTooltip] = useState(null);
-  const [loading, setLoading] = useState(true); // Main Loader
-  const [actionLoading, setActionLoading] = useState(false); // Button Loader
+  const [loading, setLoading] = useState(true); 
+  const [actionLoading, setActionLoading] = useState(false); 
 
   /* ---------------- LOAD CLASSES (Dynamic) ---------------- */
   useEffect(() => {
@@ -52,7 +67,6 @@ export default function Attendance() {
     if (!className) return; 
     setLoading(true);
 
-    // GetDocs ki jagah onSnapshot hi use kiya hai limit ke saath taaki Load More wale students bhi sync rahein
     const q = query(
       collection(db, "students"), 
       where("session", "==", session),
@@ -87,7 +101,7 @@ export default function Attendance() {
     return () => unsub();
   }, [session, month]);
 
-  /* ---------------- HELPERS (Logic Intact) ---------------- */
+  /* ---------------- HELPERS ---------------- */
   const getActualYear = () => {
     const mIndex = months.indexOf(month);
     const startYear = parseInt(session.split("-")[0]);
@@ -163,7 +177,7 @@ export default function Attendance() {
     }
   };
 
-  /* ---------------- PRINT LOGIC (Logic Intact) ---------------- */
+  /* ---------------- PRINT LOGIC ---------------- */
   const handlePrint = () => {
     const printContent = document.getElementById("attendance-table-to-print");
     let holidayGridHTML = `<table style="width:100%; border:1px solid black; margin-top:15px; border-collapse:collapse;"><tr><th colspan="4" style="background:#f2f2f2; padding:5px; border:1px solid black; font-size:12px;">🚩 HOLIDAY DETAILS</th></tr><tr>`;
@@ -215,7 +229,6 @@ export default function Attendance() {
   return (
     <div className="min-h-screen bg-gray-50 px-2 py-4 sm:px-6 md:py-8" onClick={() => setActiveTooltip(null)}>
       
-      {/* LOADER OVERLAY */}
       {loading && (
         <div className="fixed inset-0 z-[100] bg-white/70 backdrop-blur-sm flex flex-col items-center justify-center">
             <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -234,7 +247,6 @@ export default function Attendance() {
           <button onClick={handlePrint} className="bg-indigo-600 text-white px-5 py-2 rounded-xl font-bold shadow-lg hover:bg-indigo-700 active:scale-95 transition-all">🖨️ Print Register</button>
         </div>
 
-        {/* STATS */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="bg-white p-4 rounded-2xl border-l-4 border-blue-600 shadow-sm border border-gray-200">
             <p className="text-xs font-bold text-gray-400 uppercase">Students Loaded</p>
@@ -250,9 +262,10 @@ export default function Attendance() {
           </div>
         </div>
 
-        {/* FILTERS */}
         <div className="grid grid-cols-2 lg:flex lg:flex-nowrap gap-3 mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-300">
-          <select value={session} onChange={(e) => { setSession(e.target.value); setLimitCount(10); }} className="border p-2 rounded-lg text-sm w-full outline-none">{sessions.map(s => <option key={s}>{s}</option>)}</select>
+          <select value={session} onChange={(e) => { setSession(e.target.value); setLimitCount(10); }} className="border p-2 rounded-lg text-sm w-full outline-none">
+            {sessions.map(s => <option key={s} value={s}>{s} {s === CURRENT_ACTIVE_SESSION ? "(Current)" : ""}</option>)}
+          </select>
           <select value={month} onChange={(e) => setMonth(e.target.value)} className="border p-2 rounded-lg text-sm w-full outline-none">{months.map(m => <option key={m}>{m}</option>)}</select>
           <select value={className} onChange={(e) => { setClassName(e.target.value); setLimitCount(10); }} className="border p-2 rounded-lg text-sm w-full outline-none">
             {classList.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -260,7 +273,6 @@ export default function Attendance() {
           <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search..." className="border p-2.5 rounded-lg text-sm w-full outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
 
-        {/* TABLE */}
         <div id="attendance-table-to-print" className="bg-white overflow-hidden mb-4 border-2 border-black">
           <div className="overflow-x-auto max-h-[65vh] relative">
             <table className="w-full border-separate border-spacing-0 table-fixed">
@@ -314,7 +326,6 @@ export default function Attendance() {
           </div>
         </div>
 
-        {/* LOAD MORE */}
         {hasMore && (
           <div className="flex justify-center mt-6">
             <button onClick={loadMoreStudents} className="bg-black text-white px-10 py-2.5 rounded-full font-black text-sm shadow-lg active:scale-95 transition-all hover:bg-gray-800">⬇️ LOAD NEXT 10 STUDENTS</button>

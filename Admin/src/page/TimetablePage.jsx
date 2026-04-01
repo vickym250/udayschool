@@ -43,7 +43,7 @@ const TimetablePro = () => {
       }
     });
 
-const qTeachers = query(collection(db, "teachers"), where("session", "==", selectedSession));
+    const qTeachers = query(collection(db, "teachers"), where("session", "==", selectedSession));
 
 const unsubTeachers = onSnapshot(qTeachers, (snapshot) => {
   const activeTeachers = snapshot.docs

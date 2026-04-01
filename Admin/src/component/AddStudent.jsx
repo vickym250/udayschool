@@ -38,8 +38,8 @@ export default function AddStudent({ close, editData }) {
   const [subjects, setSubjects] = useState([]);
 
   const translations = {
-    en: { title: "Admission", editTitle: "Edit Student", studentInfo: "Student Info", parentInfo: "Parent Info", name: "Full Name", motherName: "Mother's Name", gender: "Gender", category: "Category", aadhaar: "Student Aadhaar", saveBtn: "SAVE & PRINT", updateBtn: "UPDATE DETAILS", admDate: "Admission Date", address: "Address", docsTitle: "Documents Received", transportLabel: "Transport Service" },
-    hi: { title: "प्रवेश (Admission)", editTitle: "छात्र विवरण संपादित करें", studentInfo: "छात्र की जानकारी", parentInfo: "अभिभावक की जानकारी", name: "पूरा नाम", motherName: "माता का नाम", gender: "लिंग", category: "श्रेणी", aadhaar: "छात्र आधार", saveBtn: "सुरक्षित करें और प्रिंट", updateBtn: "विवरण अपडेट करें", admDate: "प्रवेश तिथि", address: "पता", docsTitle: "प्राप्त दस्तावेज", transportLabel: "परिवहन सेवा (Transport)" }
+    en: { title: "Admission", editTitle: "Edit Student", studentInfo: "Student Info", parentInfo: "Parent Info", name: "Full Name", motherName: "Mother's Name", gender: "Gender", category: "Category", aadhaar: "Aadhaar (Optional)", saveBtn: "SAVE & PRINT", updateBtn: "UPDATE DETAILS", admDate: "Admission Date", address: "Address", docsTitle: "Documents Received", transportLabel: "Transport Service" },
+    hi: { title: "प्रवेश (Admission)", editTitle: "छात्र विवरण संपादित करें", studentInfo: "छात्र की जानकारी", parentInfo: "अभिभावक की जानकारी", name: "पूरा नाम", motherName: "माता का नाम", gender: "लिंग", category: "श्रेणी", aadhaar: "आधार (वैकल्पिक)", saveBtn: "सुरक्षित करें और प्रिंट", updateBtn: "विवरण अपडेट करें", admDate: "प्रवेश तिथि", address: "पता", docsTitle: "प्राप्त दस्तावेज", transportLabel: "परिवहन सेवा (Transport)" }
   };
 
   const t = translations[lang];
@@ -48,11 +48,7 @@ export default function AddStudent({ close, editData }) {
 
   const [form, setForm] = useState({
     name: "", className: "", rollNumber: "...", regNo: "...", phone: "", address: "",
-    fatherName: "", motherName: "", 
-    aadhaar: "", // Student Aadhaar
-    fatherAadhaar: "", // Added
-    motherAadhaar: "", // Added
-    gender: "", category: "", dob: "", 
+    fatherName: "", motherName: "", aadhaar: "", gender: "", category: "", dob: "", 
     session: getCurrentSession(),
     photo: null, photoURL: "",
     isTransferStudent: false, pnrNumber: "", parentId: "",
@@ -205,18 +201,8 @@ export default function AddStudent({ close, editData }) {
       let pId = form.parentId;
       let existingTokens = [];
       if (!pId) {
-        // Naya parent create karte waqt password aur dono aadhaar save honge
         const pDoc = await addDoc(collection(db, "parents"), {
-          fatherName: form.fatherName, 
-          motherName: form.motherName, 
-          fatherAadhaar: form.fatherAadhaar || "", // Added
-          motherAadhaar: form.motherAadhaar || "", // Added
-          password: "123456", // Default Password Added
-          phone: form.phone, 
-          address: form.address, 
-          students: [], 
-          fcmTokens: [], 
-          createdAt: serverTimestamp()
+          fatherName: form.fatherName, motherName: form.motherName, phone: form.phone, address: form.address, students: [], fcmTokens: [], createdAt: serverTimestamp()
         });
         pId = pDoc.id;
       } else {
@@ -354,7 +340,7 @@ export default function AddStudent({ close, editData }) {
 
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] font-bold text-gray-400 uppercase">{t.aadhaar}</label>
-                <input name="aadhaar" value={form.aadhaar} onChange={handleChange} placeholder="12 Digit Student Aadhaar" className="border-2 p-2.5 rounded-xl outline-none font-bold" maxLength="12" />
+                <input name="aadhaar" value={form.aadhaar} onChange={handleChange} placeholder="12 Digit Number" className="border-2 p-2.5 rounded-xl outline-none font-bold" maxLength="12" />
               </div>
 
               <div className="flex flex-col gap-1">
@@ -410,11 +396,11 @@ export default function AddStudent({ close, editData }) {
                 {fatherOpen && (
                   <div className="absolute z-30 bg-white border-2 w-full mt-2 rounded-3xl shadow-2xl max-h-60 overflow-auto">
                     <input autoFocus onChange={(e) => setFatherSearch(e.target.value)} placeholder="Type name or mobile..." className="p-4 w-full border-b outline-none font-bold sticky top-0 bg-white" />
-                    <div onClick={() => { setForm(p => ({ ...p, parentId: "", fatherName: "", motherName: "", phone: "", address: "", fatherAadhaar: "", motherAadhaar: "" })); setFatherOpen(false); }} className="p-4 bg-blue-50 text-blue-700 font-black text-center cursor-pointer border-b">
+                    <div onClick={() => { setForm(p => ({ ...p, parentId: "", fatherName: "", motherName: "", phone: "", address: "" })); setFatherOpen(false); }} className="p-4 bg-blue-50 text-blue-700 font-black text-center cursor-pointer border-b">
                       + ADD NEW PARENT / FRESH ENTRY
                     </div>
                     {parents.filter(p => p.fatherName?.toLowerCase().includes(fatherSearch.toLowerCase()) || p.phone?.includes(fatherSearch)).map(p => (
-                      <div key={p.id} onClick={() => { setForm(prev => ({ ...prev, fatherName: p.fatherName, motherName: p.motherName || "", phone: p.phone, parentId: p.id, address: p.address || prev.address, fatherAadhaar: p.fatherAadhaar || "", motherAadhaar: p.motherAadhaar || "" })); setFatherOpen(false); }} className="p-4 hover:bg-green-50 cursor-pointer border-b text-sm flex justify-between items-center">
+                      <div key={p.id} onClick={() => { setForm(prev => ({ ...prev, fatherName: p.fatherName, motherName: p.motherName || "", phone: p.phone, parentId: p.id, address: p.address || prev.address })); setFatherOpen(false); }} className="p-4 hover:bg-green-50 cursor-pointer border-b text-sm flex justify-between items-center">
                         <span className="font-bold">{p.fatherName}</span>
                         <span className="text-green-600 font-black bg-green-100 px-3 py-1 rounded-lg text-xs">{p.phone}</span>
                       </div>
@@ -422,28 +408,10 @@ export default function AddStudent({ close, editData }) {
                   </div>
                 )}
               </div>
-              
               <div className="grid md:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase">Father's Name</label>
-                  <input name="fatherName" value={form.fatherName} onChange={handleChange} placeholder="Father's Name" className="border-2 p-2.5 rounded-xl outline-none font-bold" required />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase">Father's Aadhaar (Optional)</label>
-                  <input name="fatherAadhaar" value={form.fatherAadhaar} onChange={handleChange} placeholder="12 Digit Aadhaar" className="border-2 p-2.5 rounded-xl outline-none font-bold" maxLength="12" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase">Mother's Name</label>
-                  <input name="motherName" value={form.motherName} onChange={handleChange} placeholder="Mother's Name" className="border-2 p-2.5 rounded-xl outline-none font-bold" required />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase">Mother's Aadhaar (Optional)</label>
-                  <input name="motherAadhaar" value={form.motherAadhaar} onChange={handleChange} placeholder="12 Digit Aadhaar" className="border-2 p-2.5 rounded-xl outline-none font-bold" maxLength="12" />
-                </div>
-                <div className="md:col-span-2 flex flex-col gap-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase">Mobile No (Login ID)</label>
-                  <input name="phone" value={form.phone} onChange={handleChange} placeholder="10 Digit Mobile" className="border-2 p-2.5 rounded-xl font-black text-blue-700 outline-none" required maxLength="10" />
-                </div>
+                <input name="fatherName" value={form.fatherName} onChange={handleChange} placeholder="Father's Name" className="border-2 p-2.5 rounded-xl outline-none font-bold" required />
+                <input name="phone" value={form.phone} onChange={handleChange} placeholder="Mobile No." className="border-2 p-2.5 rounded-xl font-black text-blue-700 outline-none" required maxLength="10" />
+                <input name="motherName" value={form.motherName} onChange={handleChange} placeholder="Mother's Name" className="border-2 p-2.5 rounded-xl outline-none font-bold" required />
               </div>
               <textarea name="address" value={form.address} onChange={handleChange} placeholder="Address" className="w-full border-2 p-2.5 rounded-xl h-20 outline-none resize-none font-medium" required />
             </section>
