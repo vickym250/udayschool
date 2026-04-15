@@ -42,6 +42,7 @@ const Sidebar = () => {
         { path: "/student", name: "Student Data" },
         { path: "/attendance", name: "Attendance" },
         { path: "/absentstudent", name: "Absent List" },
+        { path: "/fessreport", name: " Fees Report" },
         { path: "/idcard", name: "IdCard" },
         { path: "/exam-time", name: "Exam-Time" },
       ]

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { doc, getDoc, updateDoc, setDoc, collection, getDocs, query, where, arrayUnion } from 'firebase/firestore';
-import { User, Loader2, Printer, PlusCircle, Trash2, Users, CheckCircle2, Calendar, UserMinus, UserCheck } from 'lucide-react';
+import { User, Loader2, Printer, PlusCircle, Trash2, Users, CheckCircle2, Calendar, UserMinus, UserCheck, Bus } from 'lucide-react';
 import FeesReceipt from '../component/Fess';
 import toast from "react-hot-toast";
 
@@ -215,14 +215,16 @@ const StudentBilling = () => {
         }
       });
 
-      if (student.busFees && studentSelected.length > 0) {
+      // --- TRANSPORT FEES LOGIC (Based on your field 'transportFees') ---
+      const transRate = Number(student.transportFees || 0);
+      if (transRate > 0 && studentSelected.length > 0) {
         studentItems.push({ 
-            name: "Bus Fees", 
-            rate: Number(student.busFees), 
+            name: "Transport / Bus Fees", 
+            rate: transRate, 
             count: studentSelected.length, 
-            total: Number(student.busFees) * studentSelected.length, 
-            feeKey: "Bus Fees",
-            isChecked: !studentUnchecked.includes("Bus Fees")
+            total: transRate * studentSelected.length, 
+            feeKey: "TransportFees",
+            isChecked: !studentUnchecked.includes("TransportFees")
         });
       }
 
@@ -403,7 +405,7 @@ const StudentBilling = () => {
               </div>
               <div className="text-right">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Roll No</p>
-                <p className="text-2xl font-black text-slate-800">{studentBaseData?.rollNo || "--"}</p>
+                <p className="text-2xl font-black text-slate-800">{studentBaseData?.rollNumber || "--"}</p>
               </div>
           </div>
 
@@ -443,10 +445,18 @@ const StudentBilling = () => {
                     >
                         {isExcluded ? <UserMinus size={18} /> : <UserCheck size={18} />}
                     </button>
-                    <span className="font-black uppercase text-slate-800 flex items-center gap-2 text-sm">
-                        {student.name} ({student.className})
-                        {isMainStudent && <span className="bg-indigo-600 text-white text-[9px] px-2 py-0.5 rounded-full ml-2">PRIMARY</span>}
-                    </span>
+                    <div>
+                        <span className="font-black uppercase text-slate-800 flex items-center gap-2 text-sm">
+                            {student.name} ({student.className})
+                            {isMainStudent && <span className="bg-indigo-600 text-white text-[9px] px-2 py-0.5 rounded-full ml-2">PRIMARY</span>}
+                        </span>
+                        {/* Transport Badge */}
+                        {student.transportFees > 0 && (
+                            <span className="bg-amber-100 text-amber-700 text-[9px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 w-fit mt-1">
+                                <Bus size={10}/> Transport: ₹{student.transportFees}/month
+                            </span>
+                        )}
+                    </div>
                 </div>
                 <span className="text-[11px] font-black text-red-500 underline decoration-2">DUE: ₹{student.currentBalance || 0}</span>
               </div>
@@ -480,7 +490,10 @@ const StudentBilling = () => {
                             <td className="p-3 w-10 text-center">
                             <input type="checkbox" checked={item.isChecked} onChange={() => toggleTableItem(student.id, item.feeKey)} className="w-4 h-4 accent-indigo-600 cursor-pointer" />
                             </td>
-                            <td className="p-3 text-slate-700 uppercase">{item.name}</td>
+                            <td className="p-3 text-slate-700 uppercase flex items-center gap-2">
+                                {item.feeKey === "TransportFees" ? <Bus size={14} className="text-indigo-500" /> : null}
+                                {item.name}
+                            </td>
                             <td className="p-3 text-right font-mono font-black text-slate-900">₹{item.total}</td>
                         </tr>
                         ))}
@@ -491,7 +504,7 @@ const StudentBilling = () => {
               ) : (
                 <div className="p-8 text-center bg-slate-50">
                     <p className="text-red-500 font-black uppercase text-xs tracking-widest flex items-center justify-center gap-2">
-                         Fees Excluded for this billing
+                          Fees Excluded for this billing
                     </p>
                 </div>
               )}

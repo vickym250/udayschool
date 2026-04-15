@@ -103,9 +103,10 @@ const handlePrint = () => {
                     -webkit-print-color-adjust: exact !important;
                     print-color-adjust: exact !important;
                 }
+                /* Custom Brown Color Class for Print */
+                .text-custom-brown { color: #784421 !important; }
+                .bg-custom-brown { background-color: #784421 !important; }
                 .bg-gray-50 { background-color: #f9fafb !important; }
-                .bg-gray-800 { background-color: #1f2937 !important; }
-                .bg-black { background-color: #000000 !important; }
                 .text-white { color: #ffffff !important; }
                 .text-blue-900 { color: #1e3a8a !important; }
                 .border-black { border-color: #000000 !important; }
@@ -150,26 +151,27 @@ const handlePrint = () => {
 
     if (!student) return null;
 
-    const DocumentSheet = ({ copyName }) => (
+    const DocumentSheet = () => (
         <div className="sheet-container">
             {/* Copy Label */}
             <div className="absolute top-3 right-3 bg-black text-white px-2 py-0.5 text-[9px] font-bold uppercase z-10">
-                {copyName}
+               
             </div>
             
             {/* Header */}
             <div className="flex items-center border-b border-black pb-2 mb-2 gap-4">
                 <img src={school.logoUrl} className="w-14 h-14 object-contain" alt="logo" />
                 <div className="flex-1 text-center pr-10">
-                    <h1 className="text-2xl font-black text-blue-900 uppercase leading-none">{school.name}</h1>
+                    <h1 className="text-2xl font-black text-[#784421] text-custom-brown uppercase leading-none">{school.name}</h1>
                     <p className="text-[9px] font-bold text-gray-700 mt-1 uppercase">{school.affiliation}</p>
                     <p className="text-[8px] text-gray-500 italic">{school.address}</p>
-                    <p className="text-[11px] font-bold text-blue-800 uppercase">Contact: {school.phone}</p>
+                    <p className="text-[11px] font-bold text-blue-800 uppercase">Contact: {school.contact || school.phone}</p>
+                    {school.website && <p className="text-[11px] font-bold text-blue-800 uppercase">Website: {school.website}</p>}
                 </div>
             </div>
 
             {/* Session Bar */}
-            <div className="bg-gray-800 text-white text-center text-[9px] font-bold py-1 uppercase tracking-[4px] mb-2">
+            <div className="bg-[#784421] bg-custom-brown text-white text-center text-[9px] font-bold py-1 uppercase tracking-[4px] mb-2">
                 Admission Slip | Session {student.session}
             </div>
 
@@ -217,17 +219,16 @@ const handlePrint = () => {
                     <div className="p-1 border-r border-b bg-gray-50 font-bold uppercase">Phone</div>
                     <div className="p-1 border-r border-b font-bold">{student.phone}</div>
 
-                    <div className="p-1 border-r border-b bg-gray-50 font-bold uppercase">Bus Fees</div>
-                    <div className="p-1 border-r border-b font-bold text-green-700">₹{student.busFees || '0'}</div>
-                    <div className="p-1 border-r border-b bg-gray-50 font-bold uppercase">Aadhaar</div>
-                    <div className="p-1 border-r border-b font-bold">{student.aadhaar || '---'}</div>
+                    {/* Bus hatakar Aadhaar ko full row style diya gaya hai */}
+                    <div className="p-1 border-r border-b bg-gray-50 font-bold uppercase">Aadhaar No.</div>
+                    <div className="p-1 border-r border-b font-bold col-span-3 tracking-wider">{student.aadhaar || '---'}</div>
 
                     <div className="p-1 border-r border-b bg-gray-50 font-bold uppercase">Address</div>
                     <div className="p-1 border-r border-b font-medium col-span-3 uppercase text-[9px]">{student.address}</div>
                 </div>
             </div>
 
-            {/* Docs & Subjects - FULL LIST DISPLAY */}
+            {/* Documents & Subjects */}
             <div className="flex flex-col gap-2 mb-auto">
                 <div className="border border-black p-1.5 bg-gray-50">
                     <p className="text-[8px] font-black uppercase text-gray-500 mb-1 border-b border-gray-200">Documents Received:</p>
@@ -239,7 +240,6 @@ const handlePrint = () => {
                     </div>
                 </div>
                 
-                {/* YAHAN SE SAB SUBJECTS DIKHENGE */}
                 <div className="border border-black p-1.5 bg-white">
                     <p className="text-[8px] font-black uppercase text-blue-900 mb-1 border-b border-blue-100">Prescribed Subjects:</p>
                     <div className="flex flex-wrap gap-1.5">
@@ -280,7 +280,7 @@ const handlePrint = () => {
                 <div className="text-center">
                     <h2 className="font-black text-blue-900 uppercase text-sm tracking-widest">Admission Slip Preview</h2>
                 </div>
-                <button onClick={handlePrint} className="bg-blue-600 text-white px-8 py-1.5 rounded font-bold text-xs uppercase shadow-sm">
+                <button onClick={handlePrint} className="bg-[#784421] text-white px-8 py-1.5 rounded font-bold text-xs uppercase shadow-sm">
                     Print Slip
                 </button>
             </div>
